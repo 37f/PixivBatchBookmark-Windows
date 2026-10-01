@@ -16,15 +16,40 @@ public static class SessionParser
             {
                 using var doc = ParseJson(content);
                 var root = doc.RootElement;
-                if (!root.TryGetProperty("token", out var token) || !root.TryGetProperty("userData", out var user) || user.ValueKind != JsonValueKind.Object) break;
-                var id = user.GetProperty("id").ToString();
-                var csrf = token.GetString() ?? "";
-                if (!long.TryParse(id, out var userId) || userId <= 0 || !Regex.IsMatch(csrf, @"^[A-Za-z0-9_-]{3,256}$")) break;
-                return new(id, user.TryGetProperty("name", out var username) ? username.GetString() ?? id : id, csrf);
+                if (!root.TryGetProperty("token", out var token) || !root.TryGetProperty("userData", out var user)) continue;
+                if (ReadSession(user, token) is { } session) return session;
             }
-            catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException) { break; }
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException) { }
+        }
+        // The current homepage uses Next.js data instead of legacy global-data.
+        // Only userData.self identifies the signed-in user; users contains other artists.
+        foreach (Match script in Regex.Matches(html, @"<script\b([^>]*)>(.*?)</script\s*>", RegexOptions.IgnoreCase | RegexOptions.Singleline))
+        {
+            var attributes = Attributes(script.Groups[1].Value);
+            if (!attributes.TryGetValue("id", out var id) || id != "__NEXT_DATA__") continue;
+            try
+            {
+                using var doc = ParseJson(script.Groups[2].Value);
+                var page = doc.RootElement.GetProperty("props").GetProperty("pageProps");
+                if (!page.TryGetProperty("isLoggedIn", out var loggedIn) || loggedIn.ValueKind != JsonValueKind.True) continue;
+                using var state = ParseJson(page.GetProperty("serverSerializedPreloadedState").GetRawText());
+                var user = state.RootElement.GetProperty("userData").GetProperty("self");
+                var token = state.RootElement.GetProperty("api").GetProperty("token");
+                if (ReadSession(user, token) is { } session) return session;
+            }
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException) { }
         }
         throw new PixivException("未检测到有效登录身份和收藏安全令牌。请完成网页登录，再打开 Pixiv 首页重试；若持续失败，网站页面结构可能已变化。");
+    }
+
+    private static LoginSession? ReadSession(JsonElement user, JsonElement token)
+    {
+        if (user.ValueKind != JsonValueKind.Object || token.ValueKind != JsonValueKind.String || !user.TryGetProperty("id", out var identity)) return null;
+        var id = identity.ToString();
+        var csrf = token.GetString() ?? "";
+        if (!long.TryParse(id, out var userId) || userId <= 0 || !Regex.IsMatch(csrf, @"^[A-Za-z0-9_-]{3,256}$")) return null;
+        var name = user.TryGetProperty("name", out var username) && username.ValueKind == JsonValueKind.String ? username.GetString() ?? id : id;
+        return new(id, name, csrf);
     }
 
     private static JsonDocument ParseJson(string text)

@@ -1,7 +1,7 @@
 <Window x:Class="PixivBatchBookmark.Windows.MainWindow"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="Pixiv 批量收藏 · Windows 1.0.1" Icon="pack://application:,,,/PixivBatchBookmark;component/Assets/AppIcon.ico" Width="1460" Height="900" MinWidth="1000" MinHeight="740" WindowStartupLocation="CenterScreen" Closing="Window_Closing">
+ Title="Pixiv 批量收藏 · Windows 1.0.2" Icon="pack://application:,,,/PixivBatchBookmark;component/Assets/AppIcon.ico" Width="1460" Height="900" MinWidth="1000" MinHeight="740" WindowStartupLocation="CenterScreen" Closing="Window_Closing">
  <Grid Background="#F8F0E2">
   <!-- Preserve the supplied wallpaper proportions; keep the controls over a readable warm background. -->
   <Image x:Name="WallpaperImage" Source="pack://application:,,,/PixivBatchBookmark;component/Assets/Wallpaper.png" Stretch="Uniform" HorizontalAlignment="Right" />
@@ -12,7 +12,7 @@
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="1.05*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <Grid Grid.Row="0" Margin="0,0,0,18">
    <StackPanel><TextBlock Text="Pixiv 批量收藏" FontSize="28" FontWeight="SemiBold" Foreground="#14283F"/><TextBlock Text="整理喜欢的作品，公开与私密随时切换" Foreground="#667A90" Margin="0,5,0,0"/></StackPanel>
-   <TextBlock Text="WINDOWS  /  v1.0.1" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#667A90" FontSize="12"/>
+   <TextBlock Text="WINDOWS  /  v1.0.2" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#667A90" FontSize="12"/>
   </Grid>
   <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,14" Padding="18,14">
    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>

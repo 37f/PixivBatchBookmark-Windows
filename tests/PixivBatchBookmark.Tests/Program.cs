@@ -45,6 +45,16 @@ const string global="<meta content='{&quot;token&quot;:&quot;abc123&quot;,&quot;
 Test("HTML escaped global data authenticates", () => {var s=SessionParser.Parse(global); Equal("42",s.UserId); Equal("abc123",s.CsrfToken); Equal("测试",s.UserName);});
 Test("JSON string wrapped global data authenticates", () => {var data=JsonSerializer.Serialize("{\"token\":\"xyz123\",\"userData\":{\"id\":\"42\",\"name\":\"T\"}}"); Equal("xyz123",SessionParser.Parse($"<meta name='global-data' content='{WebUtility.HtmlEncode(data)}'>").CsrfToken);});
 Test("missing login identity blocks authentication", () => {try {SessionParser.Parse("<meta name='global-data' content='{\"token\":\"abc\",\"userData\":null}'>"); throw new Exception("Expected auth failure");} catch(PixivException e){ True(e.StopBatch); }});
+// Current homepage shape, with identity and token replaced by test values.
+const string nextState="{\"api\":{\"token\":\"next123\",\"language\":\"zh\"},\"userData\":{\"self\":{\"id\":\"42\",\"name\":\"测试 & 收藏\"},\"users\":{\"99\":{\"id\":\"99\",\"name\":\"其他作者\"}}}}";
+string NextPage(string state, bool loggedIn=true) => "<script type='application/json' id='__NEXT_DATA__'>" + JsonSerializer.Serialize(new { props=new { pageProps=new { isLoggedIn=loggedIn, serverSerializedPreloadedState=state } } }) + "</script>";
+void RejectSession(string html) {try {SessionParser.Parse(html); throw new Exception("Expected auth failure");} catch(PixivException e){True(e.StopBatch);}}
+Test("Next homepage authenticates the current user with its API token", () => {var s=SessionParser.Parse(NextPage(nextState)); Equal("42",s.UserId); Equal("next123",s.CsrfToken); Equal("测试 & 收藏",s.UserName);});
+Test("unusable legacy metadata falls back to current homepage data", () => Equal("42",SessionParser.Parse("<meta name='global-data' content='{\"userData\":null}'>"+NextPage(nextState)).UserId));
+Test("Next logged-out page cannot authenticate cached self data", () => RejectSession(NextPage(nextState,false)));
+Test("other users on Next page cannot replace missing self identity", () => RejectSession(NextPage(nextState.Replace("\"self\":{\"id\":\"42\",\"name\":\"测试 & 收藏\"}","\"self\":null"))));
+Test("Next identity without token cannot authenticate", () => RejectSession(NextPage(nextState.Replace("\"token\":\"next123\",",""))));
+Test("malformed Next state fails closed", () => RejectSession(NextPage("not-json")));
 Test("bookmark form preserves entity decoded tags and comment", () => {var d=SessionParser.ParseBookmarkDetails("<form><input value='风景 A&amp;B' name='tag'><input name=\"comment\" value=\"hello &amp; world\"></form>"); Equal("风景,A&B",string.Join(",",d.Tags)); Equal("hello & world",d.Comment);});
 Test("missing bookmark form blocks conversion", () => {try {SessionParser.ParseBookmarkDetails("<html>login</html>"); throw new Exception("Expected parse failure");} catch(PixivException) {} });
 

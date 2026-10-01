@@ -59,7 +59,9 @@ public partial class LoginWindow : Window
                 await Task.Delay(500, _closed.Token);
                 if (!Uri.TryCreate(Browser.Source?.AbsoluteUri, UriKind.Absolute, out var uri) ||
                     uri.Scheme != "https" || !(uri.Host == "www.pixiv.net" || uri.Host == "pixiv.net")) continue;
-                var encoded = await Browser.ExecuteScriptAsync("document.querySelector('meta[name=\"global-data\"]')?.outerHTML || ''");
+                // Read both supported first-party page formats; the current homepage
+                // stores identity and token in __NEXT_DATA__ rather than a meta tag.
+                var encoded = await Browser.ExecuteScriptAsync("Array.from(document.querySelectorAll('meta[name=\"global-data\"], script#__NEXT_DATA__')).map(node => node.outerHTML).join('')");
                 try { session = SessionParser.Parse(JsonSerializer.Deserialize<string>(encoded) ?? ""); break; }
                 catch (PixivException) { /* The navigation may not have finished loading metadata. */ }
             }

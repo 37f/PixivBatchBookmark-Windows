@@ -1,14 +1,18 @@
-# Pixiv 批量收藏工具 Windows v1.0.1
+# Pixiv 批量收藏工具 Windows v1.0.2
 
 中文 WPF 桌面工具，按 Android v0.1.5 的已确认规则重新实现。支持插画、漫画和动图的作品 ID。
 
 ## 下载
 
-- [Windows x64 便携包（完整解压后运行）](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.1/PixivBatchBookmark_Windows_v1.0.1_win-x64.zip)
-- [完整源码与构建脚本](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.1/PixivBatchBookmark_Windows_v1.0.1_source.zip)
-- [版本说明和校验文件](https://github.com/37f/PixivBatchBookmark-Windows/releases/tag/v1.0.1)
+- [Windows x64 便携包（完整解压后运行）](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.2/PixivBatchBookmark_Windows_v1.0.2_win-x64.zip)
+- [完整源码与构建脚本](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.2/PixivBatchBookmark_Windows_v1.0.2_source.zip)
+- [版本说明和校验文件](https://github.com/37f/PixivBatchBookmark-Windows/releases/tag/v1.0.2)
 
 ![Windows 桌面界面](docs/preview.png)
+
+## v1.0.2 登录检测修复
+
+修复 Pixiv 网页已经显示登录账号、程序却提示“尚未检测到有效登录”的问题。新版首页使用 Next.js 页面数据，现同时支持新版和旧版数据格式；登录窗口确认、主界面检查和任务开始前的身份检查共用解析逻辑。
 
 ## v1.0.1 外观更新
 
@@ -93,7 +97,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ```text
 dist\win-x64\PixivBatchBookmark.exe
-dist\PixivBatchBookmark_Windows_v1.0.1_win-x64.zip
+dist\PixivBatchBookmark_Windows_v1.0.2_win-x64.zip
 ```
 
 用单独解压的 SDK 或执行可见的界面冒烟检查：
@@ -145,6 +149,6 @@ docs/
 
 构建结果及测试证据见 `docs/VALIDATION.md`。离线测试和窗口检查不等同于真实账号成功收藏。
 
-本次未使用你的 Pixiv 账号，尚未验证真实登录、验证码和收藏写入。首次运行建议输入一张可访问作品，依次验证：新增公开收藏 → 转换私密 → 转换公开 → 取消；每一步在 Pixiv 网页核对模式和标签。确认后再扩大批量。
+v1.0.2 已在当前真实账号的现有登录状态下验证：登录窗口确认成功、主界面账号检查成功。未提交任何收藏或取消请求；账号密码输入、验证码、第三方登录流程及真实收藏写入仍未验证。首次运行建议输入一张可访问作品，依次验证：新增公开收藏 → 转换私密 → 转换公开 → 取消；每一步在 Pixiv 网页核对模式和标签。确认后再扩大批量。
 
 网页验证码、第三方登录提供者是否接受内置浏览器，以及网站近期结构变化，需要在实际账号环境中确认。若第三方登录提示不支持浏览器，可在官方页面使用 Pixiv 账号密码登录。
