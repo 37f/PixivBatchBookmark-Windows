@@ -26,6 +26,16 @@ public partial class MainWindow : Window
         Log("准备就绪。先登录 Pixiv，再粘贴作品 ID 或链接并解析。");
     }
 
+    private void Wallpaper_Click(object sender, RoutedEventArgs e)
+    {
+        // Change only visibility and layering; inputs and running tasks keep their state.
+        var wallpaperOnly = InterfacePanel.Visibility == Visibility.Visible;
+        InterfacePanel.Visibility = WallpaperShade.Visibility = wallpaperOnly ? Visibility.Collapsed : Visibility.Visible;
+        WallpaperImage.HorizontalAlignment = wallpaperOnly ? HorizontalAlignment.Center : HorizontalAlignment.Right;
+        System.Windows.Controls.Panel.SetZIndex(WallpaperImage, wallpaperOnly ? 3 : 0);
+        WallpaperButton.Content = wallpaperOnly ? "再见兽娘麻麻⊙﹏⊙" : "看看兽娘麻麻˃ 𖥦 ˂ ";
+    }
+
     private void Parse_Click(object sender, RoutedEventArgs e) => ParseInput();
     private void Clear_Click(object sender, RoutedEventArgs e)
     {

@@ -27,7 +27,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination $publishPath
     Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD_PARTY_NOTICES.md') -Destination $publishPath
     Copy-Item -LiteralPath (Join-Path $projectRoot 'licenses') -Destination $publishPath -Recurse -Force
-    $zipPath = Join-Path $projectRoot ('dist/PixivBatchBookmark_Windows_v1.0.2_' + $Runtime + '.zip')
+    $zipPath = Join-Path $projectRoot ('dist/PixivBatchBookmark_Windows_v1.0.3_' + $Runtime + '.zip')
     Compress-Archive -Path (Join-Path $publishPath '*') -DestinationPath $zipPath -Force
     Write-Host ('Runnable EXE: ' + (Join-Path $publishPath 'PixivBatchBookmark.exe'))
     Write-Host ('Portable ZIP: ' + $zipPath)

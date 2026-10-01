@@ -1,14 +1,20 @@
-# Pixiv 批量收藏工具 Windows v1.0.2
+# Pixiv 批量收藏工具 Windows v1.0.3
 
 中文 WPF 桌面工具，按 Android v0.1.5 的已确认规则重新实现。支持插画、漫画和动图的作品 ID。
 
 ## 下载
 
-- [Windows x64 便携包（完整解压后运行）](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.2/PixivBatchBookmark_Windows_v1.0.2_win-x64.zip)
-- [完整源码与构建脚本](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.2/PixivBatchBookmark_Windows_v1.0.2_source.zip)
-- [版本说明和校验文件](https://github.com/37f/PixivBatchBookmark-Windows/releases/tag/v1.0.2)
+- [Windows x64 便携包（完整解压后运行）](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.3/PixivBatchBookmark_Windows_v1.0.3_win-x64.zip)
+- [完整源码与构建脚本](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.3/PixivBatchBookmark_Windows_v1.0.3_source.zip)
+- [版本说明和校验文件](https://github.com/37f/PixivBatchBookmark-Windows/releases/tag/v1.0.3)
 
 ![Windows 桌面界面](docs/preview.png)
+
+## v1.0.3 壁纸查看切换
+
+主窗口顶部新增“看看兽娘麻麻˃ 𖥦 ˂ ”按钮。点击后隐藏账号、输入、操作区及日志，壁纸居中显示在前层；按钮变为“再见兽娘麻麻⊙﹏⊙”，再次点击恢复操作界面和右侧背景壁纸。输入、作品列表、收藏模式、日志及进度保留；切换只影响显示，运行中的任务继续按原流程执行。按钮始终可见、可用。这里的置顶/置低指主窗口内的图层顺序。
+
+![壁纸查看模式](docs/wallpaper-preview.png)
 
 ## v1.0.2 登录检测修复
 
@@ -97,7 +103,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ```text
 dist\win-x64\PixivBatchBookmark.exe
-dist\PixivBatchBookmark_Windows_v1.0.2_win-x64.zip
+dist\PixivBatchBookmark_Windows_v1.0.3_win-x64.zip
 ```
 
 用单独解压的 SDK 或执行可见的界面冒烟检查：

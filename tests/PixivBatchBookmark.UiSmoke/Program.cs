@@ -37,6 +37,33 @@ internal static class Program
                 Check(Control<ListBox>("IdList").Items.Count == 3, "parse populates three artwork IDs");
                 Check(Control<TextBlock>("ParseStatus").Text.Contains("去重 1") && Control<TextBlock>("ParseStatus").Text.Contains("忽略 1"), "duplicates and ignored lines shown");
                 Check(Control<TextBox>("LogBox").Text.Contains("解析得到 3"), "task log displays parse result");
+                // Viewing the wallpaper must preserve the user's unfinished work.
+                Check(window.FindName("WallpaperButton") is Button, "wallpaper toggle is available in the main window");
+                var savedInput = input.Text;
+                var savedRows = Control<ListBox>("IdList").Items.Cast<string>().ToArray();
+                var savedLog = Control<TextBox>("LogBox").Text;
+                Control<RadioButton>("PrivateMode").IsChecked = true;
+                Control<ProgressBar>("TaskProgress").Maximum = 3;
+                Control<ProgressBar>("TaskProgress").Value = 1;
+                Click("WallpaperButton");
+                Check(Control<Grid>("InterfacePanel").Visibility == Visibility.Collapsed && Control<System.Windows.Shapes.Rectangle>("WallpaperShade").Visibility == Visibility.Collapsed && Panel.GetZIndex(Control<Image>("WallpaperImage")) > Panel.GetZIndex(Control<Grid>("InterfacePanel")) && Control<Image>("WallpaperImage").HorizontalAlignment == HorizontalAlignment.Center, "wallpaper mode hides the interface and displays the foreground wallpaper");
+                Check(Control<Button>("WallpaperButton").IsVisible && Control<Button>("WallpaperButton").IsEnabled && (string)Control<Button>("WallpaperButton").Content == "再见兽娘麻麻⊙﹏⊙", "visible restore button uses the requested label");
+                if (args.Length > 0)
+                {
+                    window.UpdateLayout();
+                    var wallpaperRoot = (FrameworkElement)VisualTreeHelper.GetChild(window, 0);
+                    var wallpaperBitmap = new RenderTargetBitmap((int)wallpaperRoot.ActualWidth, (int)wallpaperRoot.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                    wallpaperBitmap.Render(window); var wallpaperEncoder = new PngBitmapEncoder(); wallpaperEncoder.Frames.Add(BitmapFrame.Create(wallpaperBitmap));
+                    var wallpaperPath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[0]))!, Path.GetFileNameWithoutExtension(args[0]) + "_wallpaper.png");
+                    using var wallpaperOutput = File.Create(wallpaperPath); wallpaperEncoder.Save(wallpaperOutput);
+                    Console.WriteLine("Wallpaper render: " + wallpaperPath);
+                }
+                Click("WallpaperButton");
+                Check(Control<Grid>("InterfacePanel").Visibility == Visibility.Visible && Control<System.Windows.Shapes.Rectangle>("WallpaperShade").Visibility == Visibility.Visible && Panel.GetZIndex(Control<Image>("WallpaperImage")) < Panel.GetZIndex(Control<Grid>("InterfacePanel")) && Control<Image>("WallpaperImage").HorizontalAlignment == HorizontalAlignment.Right && (string)Control<Button>("WallpaperButton").Content == "看看兽娘麻麻˃ 𖥦 ˂ ", "leaving wallpaper mode restores the interface and background wallpaper");
+                Check(input.Text == savedInput && Control<ListBox>("IdList").Items.Cast<string>().SequenceEqual(savedRows) && Control<TextBox>("LogBox").Text == savedLog && Control<RadioButton>("PrivateMode").IsChecked == true && Control<ProgressBar>("TaskProgress").Value == 1, "wallpaper round trip preserves input results logs mode and progress");
+                Control<RadioButton>("PublicMode").IsChecked = true;
+                Control<ProgressBar>("TaskProgress").Value = 0;
+                Control<ProgressBar>("TaskProgress").Maximum = 1;
                 if (args.Length > 0)
                 {
                     window.UpdateLayout();
