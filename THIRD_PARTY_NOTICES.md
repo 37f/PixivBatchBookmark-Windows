@@ -6,7 +6,9 @@ This project uses original application code with the following dependencies:
 - Microsoft.Web.WebView2 1.0.4258.31: https://www.nuget.org/packages/Microsoft.Web.WebView2/1.0.4258.31 (Microsoft WebView2 SDK license applies).
 - Microsoft Edge WebView2 Runtime: installed separately under Microsoft's runtime license. https://developer.microsoft.com/en-us/microsoft-edge/webview2/
 
-The project is unaffiliated with Pixiv. Pixiv owns its service, logos and website content; artwork rights belong to their respective creators. No artwork is bundled.
+The project is unaffiliated with Pixiv. Pixiv owns its service, logos and website content; artwork rights belong to their respective creators.
+
+Version 1.0.1 bundles the user-supplied icon image and theme wallpaper as UI assets. These images retain their creators' rights. The wallpaper's visible attribution is @cloneko.oo. The original images and their visible credit are preserved; the application dependency licenses do not grant artwork rights.
 
 Endpoint request formats were checked against original open-source implementations, without copying their code:
 https://github.com/AgMonk/pixiv-utils

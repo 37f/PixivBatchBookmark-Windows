@@ -1,14 +1,18 @@
-# Pixiv 批量收藏工具 Windows v1.0.0
+# Pixiv 批量收藏工具 Windows v1.0.1
 
 中文 WPF 桌面工具，按 Android v0.1.5 的已确认规则重新实现。支持插画、漫画和动图的作品 ID。
 
 ## 下载
 
-- [Windows x64 便携包（完整解压后运行）](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.0/PixivBatchBookmark_Windows_v1.0.0_win-x64.zip)
-- [完整源码与构建脚本](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.0/PixivBatchBookmark_Windows_v1.0.0_source.zip)
-- [版本说明和校验文件](https://github.com/37f/PixivBatchBookmark-Windows/releases/tag/v1.0.0)
+- [Windows x64 便携包（完整解压后运行）](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.1/PixivBatchBookmark_Windows_v1.0.1_win-x64.zip)
+- [完整源码与构建脚本](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.0.1/PixivBatchBookmark_Windows_v1.0.1_source.zip)
+- [版本说明和校验文件](https://github.com/37f/PixivBatchBookmark-Windows/releases/tag/v1.0.1)
 
 ![Windows 桌面界面](docs/preview.png)
+
+## v1.0.1 外观更新
+
+使用提供的第一张图片作为 EXE 和窗口图标，第二张图片作为主题壁纸。壁纸保持完整比例，显示在主窗口右侧；操作区使用暖色底色，原图和署名保留在 Assets 资源中。
 
 ## 已实现功能
 
@@ -89,7 +93,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 ```text
 dist\win-x64\PixivBatchBookmark.exe
-dist\PixivBatchBookmark_Windows_v1.0.0_win-x64.zip
+dist\PixivBatchBookmark_Windows_v1.0.1_win-x64.zip
 ```
 
 用单独解压的 SDK 或执行可见的界面冒烟检查：
