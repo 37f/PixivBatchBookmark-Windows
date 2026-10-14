@@ -15,7 +15,7 @@ Qt 与 WPF 使用独立进程协调显示，发布包内包含旧版自包含运
 
 ## 合一版构建与下载
 
-GitHub Actions 的 [Unified Windows build](https://github.com/37f/PixivBatchBookmark-PySide6/actions/workflows/build-windows.yml)
+GitHub Actions 的 [Unified Windows build](https://github.com/37f/PixivBatchBookmark-Unified/actions/workflows/build-windows.yml)
 会编译、测试并生成 `PixivBatchBookmark-Unified-win-x64` artifact。
 下载后解压外层 artifact ZIP，再解压里面的便携 ZIP，运行外层
 `PixivBatchBookmark.exe`；请保留 `_internal/` 和 `legacy/` 完整目录。
