@@ -114,7 +114,7 @@ class MainWindow(QMainWindow):
     closed = Signal()
     def __init__(self, session=None, offline=False):
         super().__init__()
-        self.setWindowTitle(f'PixivBatchBookmark Windows v{VERSION}')
+        self.setWindowTitle(f'PixivBatchBookmark Windows v{VERSION} · 新版')
         self.setWindowIcon(QIcon(str(resource_path('icon.ico'))))
         self.resize(1160, 820)
         self.setMinimumSize(960, 720)
@@ -332,6 +332,7 @@ class MainWindow(QMainWindow):
         pending = self.version_switcher is not None and self.version_switcher.pending
         login_open = self.login_dialog is not None and self.login_dialog.isVisible()
         self.version_button.setEnabled(not self._busy and not pending and not login_open)
+        self.interface.setEnabled(not pending)
 
     def _version_error(self, message):
         self.log(message)
