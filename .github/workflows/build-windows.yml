@@ -21,38 +21,53 @@ jobs:
       - name: Build and verify both original applications
         shell: powershell
         run: ./build.ps1 -PythonPath (Get-Command python).Source -RunUiSmoke
-      - name: Upload unified portable package
+      - name: Pack source snapshot
+        shell: pwsh
+        run: |
+          $package = Get-ChildItem -Path dist -Filter 'PixivBatchBookmark_Unified_v*_win-x64.zip' | Select-Object -First 1
+          if (-not $package) { throw 'Portable package not found in dist/' }
+          if ($package.Name -notmatch 'v(\d+\.\d+\.\d+)_win-x64\.zip$') { throw "Unexpected package name: $($package.Name)" }
+          $source = "dist/PixivBatchBookmark_Unified_v$($Matches[1])_source.zip"
+          git archive --format=zip -o $source HEAD
+          if (-not (Test-Path $source)) { throw 'Source archive was not created.' }
+          Get-FileHash -LiteralPath $source -Algorithm SHA256
+      - name: Upload unified portable package and source
         uses: actions/upload-artifact@v4
         with:
           name: PixivBatchBookmark-Unified-win-x64
-          path: dist/PixivBatchBookmark_Unified_v*_win-x64.zip
+          path: dist/PixivBatchBookmark_Unified_v*
           if-no-files-found: error
-      - name: Publish portable package to a GitHub Release
+      - name: Publish portable package and source to a GitHub Release
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $zip = Get-ChildItem -Path dist -Filter 'PixivBatchBookmark_Unified_v*_win-x64.zip' | Select-Object -First 1
-          if (-not $zip) { throw 'Portable package not found in dist/' }
-          if ($zip.Name -notmatch 'v(\d+\.\d+\.\d+)_win-x64\.zip$') { throw "Unexpected package name: $($zip.Name)" }
+          $package = Get-ChildItem -Path dist -Filter 'PixivBatchBookmark_Unified_v*_win-x64.zip' | Select-Object -First 1
+          $source = Get-ChildItem -Path dist -Filter 'PixivBatchBookmark_Unified_v*_source.zip' | Select-Object -First 1
+          if (-not $package) { throw 'Portable package not found in dist/' }
+          if (-not $source) { throw 'Source archive not found in dist/' }
+          if ($package.Name -notmatch 'v(\d+\.\d+\.\d+)_win-x64\.zip$') { throw "Unexpected package name: $($package.Name)" }
           $version = $Matches[1]
           $tag = "v$version"
-          $hash = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLower()
+          $hash = (Get-FileHash -LiteralPath $package.FullName -Algorithm SHA256).Hash.ToLower()
           $notes = @(
             "Pixiv 批量收藏 Windows 合一版 $tag。",
             "",
-            "解压整个包裹后运行外层 PixivBatchBookmark.exe；新版为 PySide6 界面，界面上的按钮可切到原始 WPF 旧版（legacy/ 子目录），再点可切回。",
+            "解压整个便携包后运行外层 PixivBatchBookmark.exe；新版为 PySide6 界面，界面上的按钮可切到原始 WPF 旧版（legacy/ 子目录），再点可切回。",
             "旧版网页登录需要 WebView2 Runtime（Windows 11 通常已自带）。",
             "",
-            "- SHA256: $hash",
+            "附件：",
+            "- $($package.Name) —— 构建好的便携包（内含 exe）",
+            "- $($source.Name) —— 该版本的完整源码快照",
+            "",
+            "- 便携包 SHA256: $hash",
             "- 构建提交: ${{ github.sha }}"
           ) -join "`n"
           gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
-          if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $zip.FullName --clobber --repo $env:GITHUB_REPOSITORY
-          } else {
-            gh release create $tag $zip.FullName --title "PixivBatchBookmark Unified $tag" --notes $notes --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title "PixivBatchBookmark Unified $tag" --notes $notes --repo $env:GITHUB_REPOSITORY
           }
+          gh release upload $tag $package.FullName $source.FullName --clobber --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Release publish failed.' }
-          Write-Host "Published $tag with $($zip.Name) ($hash)"
+          Write-Host "Published $tag with $($package.Name) and $($source.Name)"
