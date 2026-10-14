@@ -70,4 +70,6 @@ jobs:
           }
           gh release upload $tag $package.FullName $source.FullName --clobber --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Release publish failed.' }
+          gh release edit $tag --title "PixivBatchBookmark Unified $tag" --notes $notes --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Release notes update failed.' }
           Write-Host "Published $tag with $($package.Name) and $($source.Name)"
