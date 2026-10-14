@@ -330,9 +330,12 @@ class MainWindow(QMainWindow):
 
     def _refresh_version_button(self):
         pending = self.version_switcher is not None and self.version_switcher.pending
+        blocked = self.version_switcher is not None and self.version_switcher.shutdown_blocked
         login_open = self.login_dialog is not None and self.login_dialog.isVisible()
-        self.version_button.setEnabled(not self._busy and not pending and not login_open)
+        self.version_button.setEnabled(not self._busy and not pending and not blocked and not login_open)
         self.interface.setEnabled(not pending)
+        self.bookmark_button.setEnabled(not self._busy and not blocked)
+        self.remove_button.setEnabled(not self._busy and not blocked)
 
     def _version_error(self, message):
         self.log(message)
@@ -439,6 +442,8 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, '已保存', '请关闭并重新打开软件，使代理设置生效。')
 
     def start_batch(self, action):
+        if self.version_switcher and (self.version_switcher.pending or self.version_switcher.shutdown_blocked):
+            return
         self.parse_input()
         if not self.ids:
             QMessageBox.information(self, '没有作品 ID', '请粘贴作品链接、数字列表或带 ID 标记的文本。')
@@ -464,7 +469,6 @@ class MainWindow(QMainWindow):
 
     def _set_busy(self, busy):
         self._busy = busy
-        self._refresh_version_button()
         for widget in (self.input_edit, self.parse_button, self.paste_button, self.import_button,
                 self.clear_button, self.bookmark_button, self.remove_button, self.public_radio,
                 self.private_radio, self.login_button, self.refresh_button, self.clear_login_button, self.proxy_button):
@@ -474,6 +478,7 @@ class MainWindow(QMainWindow):
         self.export_button.setEnabled(not busy)
         if self.login_dialog:
             self.login_dialog.setEnabled(not busy)
+        self._refresh_version_button()
 
     def pause(self):
         self.controller.toggle_pause()

@@ -41,7 +41,7 @@ Interface: `VersionSwitcher(window, command=None, startup_timeout_ms=15000)`,
 Files: import pinned old source under `legacy/`; new `IntegratedHost.cs`;
 modify App.xaml(.cs), MainWindow.xaml(.cs), WPF UiSmoke.
 Interface: `EnableIntegratedMode(Action returnToModern)`, `RequestHostClose()`.
-Loaded sends READY; return button sends MODERN; LEGACY restores and READY;
+Loaded hides and sends READY; return button sends MODERN; LEGACY restores and SHOWN;
 EXIT/EOF requests graceful close.
 
 - [ ] Retain original source/resources/licenses and record commit provenance.

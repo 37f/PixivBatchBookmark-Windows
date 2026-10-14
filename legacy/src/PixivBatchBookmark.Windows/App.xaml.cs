@@ -23,7 +23,14 @@ public partial class App : Application
         {
             _host = new IntegratedHost(window);
             window.EnableIntegratedMode(_host.ReturnToModern);
-            window.Loaded += (_, _) => _host.Ready();
+            RoutedEventHandler? loaded = null;
+            loaded = (_, _) =>
+            {
+                window.Loaded -= loaded;
+                window.Hide();
+                _host.Ready();
+            };
+            window.Loaded += loaded;
             _host.Start();
         }
         window.Show();

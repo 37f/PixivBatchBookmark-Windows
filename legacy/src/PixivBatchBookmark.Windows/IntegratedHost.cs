@@ -45,7 +45,7 @@ internal sealed class IntegratedHost : IDisposable
                     if (_window.WindowState == System.Windows.WindowState.Minimized)
                         _window.WindowState = System.Windows.WindowState.Normal;
                     _window.Activate();
-                    Ready();
+                    Send("SHOWN");
                 });
             }
         }

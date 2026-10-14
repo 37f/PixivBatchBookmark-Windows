@@ -32,6 +32,8 @@ if scenario == 'timeout':
     time.sleep(30)
 elif scenario == 'crash':
     print('READY', flush=True)
+    assert sys.stdin.readline().strip() == 'LEGACY'
+    print('SHOWN', flush=True)
     time.sleep(.2)
     sys.exit(7)
 else:
@@ -44,7 +46,9 @@ else:
             time.sleep(.05)
             break
         if command == 'LEGACY':
-            print('READY', flush=True)
+            print('SHOWN', flush=True)
+            if scenario == 'hung_after_show':
+                time.sleep(30)
         if command == 'RETURN':
             print('MODERN', flush=True)
         if command == 'CLOSE':
@@ -142,6 +146,15 @@ class VersionSwitcherTests(unittest.TestCase):
         self.assertTrue(self.window.isVisible())
         self.assertFalse(switcher.pending)
 
+    def test_close_during_stalled_initial_startup_has_bounded_cleanup(self):
+        switcher = self.make_switcher('timeout', startup_timeout_ms=10000,
+                                     shutdown_timeout_ms=100)
+        switcher.switch_to_legacy()
+        wait_until(lambda: switcher.is_running)
+        self.window.close()
+        wait_until(lambda: self.window.closed, timeout=2)
+        self.assertFalse(switcher.is_running)
+
     def test_crash_restores_modern_instead_of_exiting(self):
         switcher = self.make_switcher('crash')
         switcher.switch_to_legacy()
@@ -149,6 +162,20 @@ class VersionSwitcherTests(unittest.TestCase):
         wait_until(lambda: bool(self.errors))
         self.assertTrue(self.window.isVisible())
         self.assertFalse(self.window.closed)
+
+    def test_unresponsive_active_child_recovers_controls_without_force_kill(self):
+        switcher = self.make_switcher('hung_after_show', shutdown_timeout_ms=100)
+        switcher.switch_to_legacy()
+        wait_until(lambda: switcher.active_version == 'legacy')
+        self.window.close()
+        wait_until(lambda: switcher.shutdown_blocked)
+        self.assertTrue(self.window.isVisible())
+        self.assertFalse(switcher.pending)
+        self.assertTrue(switcher.is_running)
+        self.assertFalse(self.window.closed)
+        # This fixture contains no task. Test cleanup can kill it safely.
+        switcher.process.kill()
+        wait_until(lambda: not switcher.is_running)
 
     def test_normal_legacy_close_ends_unified_app(self):
         switcher = self.make_switcher()

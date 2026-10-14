@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT))
 if sys.platform != 'win32':
     raise SystemExit('Run this test on Windows x64 after build.ps1.')
 
-from PySide6.QtCore import QProcess
+from PySide6.QtCore import QEvent
 from PySide6.QtWidgets import QApplication
 from ui.window import MainWindow
 
@@ -32,6 +32,8 @@ def close_native_window(pid):
     callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
     user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
     user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+    user32.IsWindowVisible.argtypes = [wintypes.HWND]
+    user32.EnumWindows.argtypes = [callback_type, wintypes.LPARAM]
     found = []
     def visit(hwnd, _):
         process_id = wintypes.DWORD()
@@ -47,7 +49,7 @@ def close_native_window(pid):
 
 app = QApplication([])
 app.setQuitOnLastWindowClosed(False)
-with tempfile.TemporaryDirectory(prefix='unified smoke ') as data:
+with tempfile.TemporaryDirectory(prefix='unified smoke ', ignore_cleanup_errors=True) as data:
     os.environ['LOCALAPPDATA'] = data
     window = MainWindow(offline=True)
     window.version_switcher.failed.connect(lambda message: errors.append(message))
@@ -88,6 +90,7 @@ with tempfile.TemporaryDirectory(prefix='unified smoke ') as data:
         switcher.request_close()
         wait_until(lambda: not switcher.is_running)
         window.session.shutdown()
+        app.sendPostedEvents(None, QEvent.Type.DeferredDelete)
         app.processEvents()
     legacy_exe = ROOT / 'legacy/dist/win-x64/PixivBatchBookmark.exe'
     child = subprocess.Popen([str(legacy_exe), '--integrated'], stdin=subprocess.PIPE,
@@ -102,6 +105,9 @@ with tempfile.TemporaryDirectory(prefix='unified smoke ') as data:
             child.kill()  # Test cleanup only; no account/batch exists.
             child.wait()
     package = ROOT / 'dist/PixivBatchBookmark'
+    # Chromium may retain file handles until this process exits; use a separate
+    # profile for the frozen application rather than sharing the source profile.
+    os.environ['LOCALAPPDATA'] = str(Path(data) / 'frozen')
     assert (package / 'legacy/PixivBatchBookmark.exe').is_file()
     assert (package / 'legacy/PixivBatchBookmark.dll').is_file()
     bundled = subprocess.Popen([str(package / 'PixivBatchBookmark.exe'), '--offline'])
