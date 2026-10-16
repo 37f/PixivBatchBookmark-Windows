@@ -114,6 +114,7 @@ internal static class Program
                     login.Close();
                     Check(!login.IsVisible, "login window closes after initialization");
                 }
+                QuickBookmarkChecks.Run(window, Check);
                 window.Close();
             }
             catch (Exception ex) { Console.WriteLine("FAIL " + ex); code = 1; window.Close(); }

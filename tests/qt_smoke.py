@@ -6,6 +6,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs
@@ -13,7 +14,7 @@ from urllib.parse import parse_qs
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PySide6.QtCore import QEventLoop, QTimer
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 from pixiv.bookmark import Request
 from pixiv.browser import BrowserSession
 from ui.controller import BatchController
@@ -201,9 +202,116 @@ class QtIntegrationTests(unittest.TestCase):
         self.assertEqual(results[0].status, 'success')
         self.assertFalse(FixtureHandler.private)
         self.assertEqual(window.table.rowCount(), 1)
-        path = Path(__file__).resolve().parents[3] / 'ui-preview.png'
+        path = Path(self.temp.name) / 'ui-preview.png'
         self.assertTrue(window.grab().save(str(path)))
         window.close()
+
+    def test_quick_buttons_parse_input_and_use_explicit_mode_without_confirmation(self):
+        for name, original, wanted in (
+                ('quick_public_button', True, False),
+                ('quick_private_button', None, True)):
+            with self.subTest(button=name):
+                FixtureHandler.private = original
+                FixtureHandler.writes.clear()
+                window = MainWindow(session=self.session)
+                try:
+                    quick = getattr(window, name, None)
+                    self.assertIsNotNone(quick, 'Missing quick bookmark button')
+                    window.input_edit.setPlainText('pixiv id：97003966\n97003966')
+                    (window.public_radio if wanted else window.private_radio).setChecked(True)
+                    window.controller.interval_ms = 5
+                    with patch('ui.window.QMessageBox.question', side_effect=AssertionError('Unexpected confirmation')):
+                        quick.click()
+                        self.assertTrue(window.controller.running)
+                        self.assertFalse(window.quick_public_button.isEnabled())
+                        self.assertFalse(window.quick_private_button.isEnabled())
+                        # A queued/programmatic activation must not reset the active batch.
+                        quick.click()
+                        window.start_batch('bookmark')
+                        wait_until(lambda: not window.controller.running)
+                    self.assertEqual(window.ids, ['97003966'])
+                    self.assertEqual(len(window.controller.results), 1)
+                    self.assertEqual(window.controller.results[0].status, 'success')
+                    self.assertEqual(FixtureHandler.private, wanted)
+                    adds = [payload for path, payload in FixtureHandler.writes if path.endswith('/add')]
+                    self.assertEqual(len(adds), 1)
+                    self.assertEqual(adds[0]['restrict'], int(wanted))
+                    if original is not None:
+                        self.assertEqual(adds[0]['tags'], ['fixture', 'tag2'])
+                        self.assertEqual(adds[0]['comment'], 'keep')
+                    self.assertEqual(window.private_radio.isChecked(), wanted)
+                    self.assertTrue(window.quick_public_button.isEnabled())
+                    self.assertTrue(window.quick_private_button.isEnabled())
+                finally:
+                    window.close()
+
+    def test_quick_buttons_keep_login_empty_input_and_version_guards(self):
+        window = MainWindow(session=self.session)
+        try:
+            quick = getattr(window, 'quick_private_button', None)
+            self.assertIsNotNone(quick, 'Missing quick bookmark button')
+            FixtureHandler.writes.clear()
+            with patch('ui.window.QMessageBox.information'), patch.object(window, 'show_login') as login:
+                quick.click()
+                self.assertFalse(window.controller.running)
+                window.input_edit.setPlainText('97003966')
+                self.session.logged_in = False
+                quick.click()
+                self.assertFalse(window.controller.running)
+                login.assert_called_once()
+            self.session.logged_in = True
+            window.version_switcher._pending = True
+            quick.click()
+            self.assertFalse(window.controller.running)
+            window.version_switcher._pending = False
+            window.version_switcher.shutdown_blocked = True
+            window._refresh_version_button()
+            self.assertFalse(quick.isEnabled())
+            self.assertFalse(window.quick_public_button.isEnabled())
+            self.assertFalse(window.controller.running)
+            self.assertEqual(FixtureHandler.writes, [])
+        finally:
+            self.session.logged_in = True
+            window.version_switcher._pending = False
+            window.version_switcher.shutdown_blocked = False
+            window.close()
+
+    def test_regular_bookmark_still_confirms_and_cancel_preserves_results(self):
+        window = MainWindow(session=self.session)
+        try:
+            window.input_edit.setPlainText('97003966')
+            window.table.setRowCount(1)
+            FixtureHandler.writes.clear()
+            with patch('ui.window.QMessageBox.question', return_value=QMessageBox.StandardButton.No) as confirm:
+                window.bookmark_button.click()
+            confirm.assert_called_once()
+            self.assertFalse(window.controller.running)
+            self.assertEqual(window.table.rowCount(), 1)
+            self.assertEqual(FixtureHandler.writes, [])
+        finally:
+            window.close()
+
+    def test_quick_action_layout_does_not_overlap_at_minimum_window_size(self):
+        window = MainWindow(session=self.session)
+        window.show()
+        try:
+            for width, height in ((1160, 820), (960, 720)):
+                window.resize(width, height)
+                APP.processEvents()
+                card = window.quick_public_button.parentWidget()
+                controls = [window.quick_public_button, window.quick_private_button,
+                            window.bookmark_button, window.remove_button]
+                rectangles = []
+                for control in controls:
+                    rect = control.rect().translated(control.mapTo(card, control.rect().topLeft()))
+                    self.assertTrue(card.rect().contains(rect), (width, height, control.text()))
+                    for other in rectangles:
+                        self.assertFalse(rect.intersects(other), (width, height, control.text()))
+                    rectangles.append(rect)
+                note = card.layout().itemAt(card.layout().count() - 1).widget()
+                self.assertGreaterEqual(note.height(), note.heightForWidth(note.width()))
+        finally:
+            window.close()
 
     def test_stop_finishes_current_conversion_before_ending(self):
         FixtureHandler.private = False

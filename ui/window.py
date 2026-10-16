@@ -234,6 +234,9 @@ class MainWindow(QMainWindow):
 
         action_card = QGroupBox('批量操作')
         actions = QVBoxLayout(action_card)
+        # 小窗口也要容纳两行操作，避免布局被压缩到按钮的最小高度以下。
+        actions.setContentsMargins(9, 3, 9, 3)
+        actions.setSpacing(3)
         modes = QHBoxLayout()
         self.public_radio = QRadioButton('公开收藏')
         self.private_radio = QRadioButton('私密收藏')
@@ -242,11 +245,22 @@ class MainWindow(QMainWindow):
         modes.addWidget(self.private_radio)
         modes.addStretch()
         actions.addLayout(modes)
+        # 快捷入口直接指定模式，复用原有批量核验和恢复流程。
+        quick_actions = QHBoxLayout()
+        self.quick_public_button = button('快速公开收藏', lambda: self.start_batch('bookmark', private=False, quick=True), 'primary')
+        self.quick_private_button = button('快速私密收藏', lambda: self.start_batch('bookmark', private=True, quick=True), 'primary')
+        for widget in (self.quick_public_button, self.quick_private_button):
+            widget.setToolTip('自动解析当前输入并立即开始，无需再次确认；保留核验和失败恢复')
+            quick_actions.addWidget(widget)
+        actions.addLayout(quick_actions)
         self.bookmark_button = button('开始批量收藏', lambda: self.start_batch('bookmark'), 'primary')
         self.remove_button = button('批量取消收藏', lambda: self.start_batch('remove'), 'danger')
-        actions.addWidget(self.bookmark_button)
-        actions.addWidget(self.remove_button)
-        note = QLabel('同模式跳过；模式不同先取消再收藏。\n暂停或停止会先完成当前作品的核验/恢复。')
+        # 普通操作并排放置，避免新增快捷行挤压小窗口的按钮和说明。
+        standard_actions = QHBoxLayout()
+        standard_actions.addWidget(self.bookmark_button)
+        standard_actions.addWidget(self.remove_button)
+        actions.addLayout(standard_actions)
+        note = QLabel('快捷按钮直接开始；同模式跳过。\n异模式先取消再收藏；暂停/停止等待核验/恢复。')
         note.setObjectName('muted')
         note.setWordWrap(True)
         actions.addWidget(note)
@@ -334,8 +348,9 @@ class MainWindow(QMainWindow):
         login_open = self.login_dialog is not None and self.login_dialog.isVisible()
         self.version_button.setEnabled(not self._busy and not pending and not blocked and not login_open)
         self.interface.setEnabled(not pending)
-        self.bookmark_button.setEnabled(not self._busy and not blocked)
-        self.remove_button.setEnabled(not self._busy and not blocked)
+        for widget in (self.bookmark_button, self.remove_button,
+                self.quick_public_button, self.quick_private_button):
+            widget.setEnabled(not self._busy and not pending and not blocked)
 
     def _version_error(self, message):
         self.log(message)
@@ -441,7 +456,10 @@ class MainWindow(QMainWindow):
         self.log('代理设置已保存，重启软件后生效。')
         QMessageBox.information(self, '已保存', '请关闭并重新打开软件，使代理设置生效。')
 
-    def start_batch(self, action):
+    def start_batch(self, action, private=None, quick=False):
+        # 同时保护普通及快捷入口，防止排队的点击重置正在运行的任务。
+        if self._busy or self.controller.running:
+            return
         if self.version_switcher and (self.version_switcher.pending or self.version_switcher.shutdown_blocked):
             return
         self.parse_input()
@@ -452,25 +470,29 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, '请先登录', '请先完成 Pixiv 登录并检查登录状态。')
             self.show_login()
             return
+        target_private = self.private_radio.isChecked() if private is None else private
         if action == 'remove':
             confirm = QMessageBox.question(self, '批量取消收藏',
                 f'将取消输入列表中 {len(self.ids)} 个作品的收藏。公开与私密均会取消，未收藏会跳过。\n确定开始？')
             if confirm != QMessageBox.StandardButton.Yes:
                 return
-        elif QMessageBox.question(self, '开始收藏',
-                f'将处理 {len(self.ids)} 个作品，目标为{"私密" if self.private_radio.isChecked() else "公开"}收藏。\n'
+        elif not quick and QMessageBox.question(self, '开始收藏',
+                f'将处理 {len(self.ids)} 个作品，目标为{"私密" if target_private else "公开"}收藏。\n'
                 '不同模式会先取消再重建，收藏时间和收藏 ID 会变化。\n确定开始？') != QMessageBox.StandardButton.Yes:
             return
+        (self.private_radio if target_private else self.public_radio).setChecked(True)
         self.table.setRowCount(0)
         self.summary_label.setText('成功 0    跳过 0    失败 0')
         self._set_busy(True)
-        self.log(f'开始任务：{len(self.ids)} 个作品，操作：' + ('取消收藏' if action == 'remove' else '收藏'))
-        self.controller.start(self.ids, action, self.private_radio.isChecked())
+        self.log(f'开始任务：{len(self.ids)} 个作品，操作：' +
+                 ('取消收藏' if action == 'remove' else ('快速' if quick else '') + ('私密' if target_private else '公开') + '收藏'))
+        self.controller.start(self.ids, action, target_private)
 
     def _set_busy(self, busy):
         self._busy = busy
         for widget in (self.input_edit, self.parse_button, self.paste_button, self.import_button,
-                self.clear_button, self.bookmark_button, self.remove_button, self.public_radio,
+                self.clear_button, self.bookmark_button, self.remove_button,
+                self.quick_public_button, self.quick_private_button, self.public_radio,
                 self.private_radio, self.login_button, self.refresh_button, self.clear_login_button, self.proxy_button):
             widget.setEnabled(not busy)
         self.pause_button.setEnabled(busy)

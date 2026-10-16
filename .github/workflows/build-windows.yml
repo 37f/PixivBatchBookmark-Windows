@@ -26,7 +26,7 @@ jobs:
         run: |
           $package = Get-ChildItem -Path dist -Filter 'PixivBatchBookmark_Unified_v*_win-x64.zip' | Select-Object -First 1
           if (-not $package) { throw 'Portable package not found in dist/' }
-          if ($package.Name -notmatch 'v(\d+\.\d+\.\d+)_win-x64\.zip$') { throw "Unexpected package name: $($package.Name)" }
+          if ($package.Name -notmatch 'v(\d+\.\d+(?:\.\d+)?)_win-x64\.zip$') { throw "Unexpected package name: $($package.Name)" }
           $source = "dist/PixivBatchBookmark_Unified_v$($Matches[1])_source.zip"
           git archive --format=zip -o $source HEAD
           if (-not (Test-Path $source)) { throw 'Source archive was not created.' }
@@ -47,7 +47,7 @@ jobs:
           $source = Get-ChildItem -Path dist -Filter 'PixivBatchBookmark_Unified_v*_source.zip' | Select-Object -First 1
           if (-not $package) { throw 'Portable package not found in dist/' }
           if (-not $source) { throw 'Source archive not found in dist/' }
-          if ($package.Name -notmatch 'v(\d+\.\d+\.\d+)_win-x64\.zip$') { throw "Unexpected package name: $($package.Name)" }
+          if ($package.Name -notmatch 'v(\d+\.\d+(?:\.\d+)?)_win-x64\.zip$') { throw "Unexpected package name: $($package.Name)" }
           $version = $Matches[1]
           $tag = "v$version"
           $hash = (Get-FileHash -LiteralPath $package.FullName -Algorithm SHA256).Hash.ToLower()
@@ -65,10 +65,14 @@ jobs:
             "- 构建提交: ${{ github.sha }}"
           ) -join "`n"
           gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --title "PixivBatchBookmark Unified $tag" --notes $notes --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -eq 0) {
+            # Preserve an existing release and its verified local-build assets.
+            Write-Host "Release $tag already exists; preserving its assets and notes."
+            exit 0
           }
-          gh release upload $tag $package.FullName $source.FullName --clobber --repo $env:GITHUB_REPOSITORY
+          gh release create $tag --title "PixivBatchBookmark Unified $tag" --notes $notes --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Release creation failed.' }
+          gh release upload $tag $package.FullName $source.FullName --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Release publish failed.' }
           gh release edit $tag --title "PixivBatchBookmark Unified $tag" --notes $notes --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Release notes update failed.' }

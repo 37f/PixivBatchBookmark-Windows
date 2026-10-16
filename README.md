@@ -1,6 +1,11 @@
-# PixivBatchBookmark Windows 合一版 v1.1.0
+# PixivBatchBookmark Windows 合一版 v1.1
 
-将原 [WPF 旧项目](https://github.com/37f/PixivBatchBookmark-Windows) 完整接入本 PySide6 新项目。
+v1.1 在新版和旧版均增加“快速公开收藏”“快速私密收藏”。登录后粘贴作品 ID 或链接，
+点击对应快捷按钮即可自动解析、去重并直接开始，无需先选择模式或再次确认。
+快捷按钮复用原来的请求间隔、状态核验、同模式跳过、标签/备注保留和失败恢复；
+任务执行期间禁用，防止重复启动。原来的普通批量收藏和取消收藏入口保留。
+
+将原 [WPF 旧项目](https://github.com/37f/PixivBatchBookmark-Windows-old) 完整接入本 PySide6 新项目。
 **一个完整程序包、一个启动入口，默认打开新版。** 点击新版顶栏的“切换到旧版”，
 显示原 WPF 界面；点击旧版顶栏的“换回新版”，恢复新版。
 
@@ -15,7 +20,13 @@ Qt 与 WPF 使用独立进程协调显示，发布包内包含旧版自包含运
 
 ## 合一版构建与下载
 
-GitHub Actions 的 [Unified Windows build](https://github.com/37f/PixivBatchBookmark-Unified/actions/workflows/build-windows.yml)
+- [v1.1 Windows x64 完整便携包](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.1/PixivBatchBookmark_Unified_v1.1_win-x64.zip)
+- [v1.1 完整源码](https://github.com/37f/PixivBatchBookmark-Windows/releases/download/v1.1/PixivBatchBookmark_Unified_v1.1_source.zip)
+- [发布说明与校验文件](https://github.com/37f/PixivBatchBookmark-Windows/releases/tag/v1.1)
+
+原发布编号 `v1.1.0` 已调整为 `v1.0`，保留原始构建附件；本次快速收藏更新编号为 `v1.1`。
+
+GitHub Actions 的 [Unified Windows build](https://github.com/37f/PixivBatchBookmark-Windows/actions/workflows/build-windows.yml)
 会编译、测试并生成 `PixivBatchBookmark-Unified-win-x64` artifact。
 下载后解压外层 artifact ZIP，再解压里面的便携 ZIP，运行外层
 `PixivBatchBookmark.exe`；请保留 `_internal/` 和 `legacy/` 完整目录。
@@ -33,7 +44,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -RunUiSmoke
 dist/PixivBatchBookmark/PixivBatchBookmark.exe  # 统一入口
 dist/PixivBatchBookmark/_internal/            # 新版 Qt/Python 运行文件
 dist/PixivBatchBookmark/legacy/               # 原旧版与完整 .NET 运行文件
-dist/PixivBatchBookmark_Unified_v1.1.0_win-x64.zip
+dist/PixivBatchBookmark_Unified_v1.1_win-x64.zip
 ```
 
 源码运行双击 `run.bat`：首次安装 Python 依赖，并测试/构建旧版，再启动新版。
@@ -52,7 +63,7 @@ Windows 10/11 x64 桌面程序，用于从文本提取 Pixiv 作品 ID，并批�
 - [完整源码与构建脚本](https://github.com/37f/PixivBatchBookmark-PySide6/releases/download/v1.0.2/PixivBatchBookmark_PySide6_v1.0.2_source.zip)
 - [版本说明和 SHA-256 校验文件](https://github.com/37f/PixivBatchBookmark-PySide6/releases/tag/v1.0.2)
 
-本仓库新版界面为 Python / PySide6 实现；v1.1.0 已整合原 WPF Windows 版。
+本仓库新版界面为 Python / PySide6 实现；v1.0（原发布编号 v1.1.0）已整合原 WPF Windows 版。
 
 ![主界面预览](docs/UI-preview.png)
 
@@ -76,6 +87,7 @@ v1.0.2 新增粉发兔耳女孩壁纸。点击右上角“切换壁纸”，即�
 - 解析纯 ID 列表、作品链接、`pixiv id：97003966` 混合文本；去重并保持顺序。
 - 支持插画、漫画和动图；用户链接和小说链接不会误当作作品。
 - 批量公开/私密收藏：未收藏则添加，同模式跳过，模式不同则先取消再重建。
+- 新旧版均提供快速公开/私密收藏：自动解析当前输入，点击后立即执行，无开始确认弹窗。
 - 转换前读取原收藏标签及备注；所需字段读取失败保留原收藏；重建失败尽力恢复原收藏。
 - 批量取消输入列表中的收藏，并重新查询确认。
 - 串行处理、暂停/继续、停止；当前作品的转换/核验/恢复完成后再暂停或停止。
@@ -111,7 +123,7 @@ py -3.12 -m venv .venv
 2. 点击“登录 Pixiv”，在官方网页中完成账号登录。验证码或二次验证需要手动完成。
 3. 登录后点击“返回首页并检查”。主窗口显示“已登录：用户名”后即可执行任务。
 4. 粘贴作品 ID/链接或导入 TXT，点击“解析 ID”。
-5. 选择公开或私密，点击“开始批量收藏”；需要移除时点击“批量取消收藏”。开始前会显示数量和操作内容。
+5. 点击“快速公开收藏”或“快速私密收藏”直接开始，也可选择模式后使用原来的“开始批量收藏”。新版普通收藏与取消操作仍会弹出确认；快捷收藏不弹开始确认。需要移除时点击“批量取消收藏”。
 6. 在日志和结果表中查看每个作品的核验结果；需要时导出结果/保存日志。
 
 示例输入：

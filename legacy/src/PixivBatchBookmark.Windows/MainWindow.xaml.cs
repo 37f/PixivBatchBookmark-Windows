@@ -139,13 +139,17 @@ public partial class MainWindow : Window
 
     private async void Bookmark_Click(object sender, RoutedEventArgs e) => await RunBatchAsync(BatchAction.Bookmark);
     private async void Remove_Click(object sender, RoutedEventArgs e) => await RunBatchAsync(BatchAction.Remove);
+    private async void QuickPublic_Click(object sender, RoutedEventArgs e) => await RunBatchAsync(BatchAction.Bookmark, BookmarkMode.Public);
+    private async void QuickPrivate_Click(object sender, RoutedEventArgs e) => await RunBatchAsync(BatchAction.Bookmark, BookmarkMode.Private);
 
-    private async Task RunBatchAsync(BatchAction action)
+    private async Task RunBatchAsync(BatchAction action, BookmarkMode? targetMode = null)
     {
-        if (_busy || _http is null || _session is null) return;
+        if (_busy || _closeWhenIdle || _http is null || _session is null) return;
         ParseInput();
         if (_ids.Count == 0) { Log("没有有效的作品 ID，任务未开始。"); return; }
-        var mode = PrivateMode.IsChecked == true ? BookmarkMode.Private : BookmarkMode.Public;
+        // 快捷按钮显式指定模式，避免沿用上一次单选框的相反模式。
+        var mode = targetMode ?? (PrivateMode.IsChecked == true ? BookmarkMode.Private : BookmarkMode.Public);
+        if (mode == BookmarkMode.Private) PrivateMode.IsChecked = true; else PublicMode.IsChecked = true;
         var ids = _ids.ToArray(); // Fix the batch input before the first request.
         _stop = new CancellationTokenSource(); SetBusy(true); StopButton.IsEnabled = true;
         var success = 0; var skipped = 0; var failed = 0; var processed = 0;
@@ -196,6 +200,7 @@ public partial class MainWindow : Window
         var enabled = !busy && !_closeWhenIdle;
         LoginButton.IsEnabled = ParseButton.IsEnabled = ClearButton.IsEnabled = PublicMode.IsEnabled = PrivateMode.IsEnabled = enabled;
         CheckLoginButton.IsEnabled = BookmarkButton.IsEnabled = RemoveButton.IsEnabled = enabled && _session is not null;
+        QuickPublicButton.IsEnabled = QuickPrivateButton.IsEnabled = enabled && _session is not null;
         ModeSwitchButton.IsEnabled = enabled;
         StopButton.IsEnabled = busy && _stop is not null;
         if (!busy && _closeWhenIdle) Dispatcher.BeginInvoke(new Action(RequestHostClose));
